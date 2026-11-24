@@ -1,0 +1,45 @@
+<resources>
+    <string name="app_name">AppInstantesqueSeSienten</string>
+    <string name="inicio_titulo">Instantes que se sienten</string>
+    <string name="inicio_buscar">Buscar en mis instantes</string>
+    <string name="filtro_todos">Todos</string>
+    <string name="filtro_favoritos">Favoritos</string>
+    <string name="filtro_naturaleza">Naturaleza</string>
+    <string name="filtro_arte">Arte</string>
+    <string name="inicio_nuevo_instante">Nuevo instante</string>
+    <string name="nav_inicio">Inicio</string>
+    <string name="nav_mapa">Mapa</string>
+    <string name="nav_citas">Citas</string>
+    <string name="nav_perfil">Perfil</string>
+
+    <string name="ejemplo_titulo_1">Mirador al ocaso</string>
+    <string name="ejemplo_lugar_1">12 oct · Mirador</string>
+    <string name="ejemplo_titulo_2">Lago al alba</string>
+    <string name="ejemplo_lugar_2">10 oct · Lago</string>
+
+    <string name="nuevo_titulo">Nuevo instante</string>
+    <string name="nuevo_campo_titulo">Título</string>
+    <string name="nuevo_campo_reflexion">¿Qué sientes?</string>
+    <string name="nuevo_campo_lugar">Lugar</string>
+    <string name="nuevo_campo_cita">Cita (opcional)</string>
+    <string name="nuevo_camara">Cámara</string>
+    <string name="nuevo_galeria">Galería</string>
+    <string name="nuevo_guardar">Guardar</string>
+    <string name="nuevo_cancelar">Cancelar</string>
+    <string name="volver">Volver</string>
+    <string name="ejemplo_titulo_3">Museo al alba</string>
+    <string name="ejemplo_lugar_3">08 oct · Museo</string>
+    <string name="ejemplo_titulo_4">Plaza conn calma</string>
+    <string name="ejemplo_lugar_4">05 oct · Plaza</string>
+    <string name="desc_favorito">Marcar como favorito</string>
+
+    <string name="nuevo_foto">Agrega una foto de lo que viste</string>
+    <string name="nuevo_etiquetas">Etiquetas</string>
+    <string name="filtro_atardecer">Atardecer</string>
+    <string name="bienvenida_titulo">Instantes</string>
+    <string name="bienvenida_subtitulo">Captura la luz de los momentos que se sienten.</string>
+    <string name="bienvenida_comenzar">Comenzar</string>
+    <string name="no_hay_instantes">No hay instantes guardados todavía</string>
+    <string name="error_foto_titulo_obligatorios">La foto y el título son obligatorios</string>
+    <string name="instante_guardado_exito">Instante guardado con éxito</string>
+</resources>
