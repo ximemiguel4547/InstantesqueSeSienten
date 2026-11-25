@@ -57,7 +57,6 @@ abstract class AppDatabase : RoomDatabase() {
                 INSTANCE?.let { database ->
                     CoroutineScope(Dispatchers.IO).launch {
                         val etiquetaDao = database.etiquetaDao()
-                        // Solo dejamos las etiquetas iniciales (sin instantes de ejemplo)
                         etiquetaDao.insertarEtiquetas(
                             listOf(
                                 EtiquetaEntity(nombre = "Naturaleza"),

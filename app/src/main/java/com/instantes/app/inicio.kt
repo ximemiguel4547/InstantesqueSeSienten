@@ -25,6 +25,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
+import com.instantes.app.ui.viewmodel.FiltroInicio
 import com.instantes.app.ui.viewmodel.InicioViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -35,6 +36,7 @@ import java.util.Locale
 fun Inicio(
     onNuevoClick: () -> Unit = {},
     onEditarClick: (Long) -> Unit = {},
+    onItemClick: (Long) -> Unit = {},
     onCitasClick: () -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -115,37 +117,36 @@ fun Inicio(
                     .padding(horizontal = 16.dp)
             )
 
-            val indiceArchivados = 2 + etiquetas.size
             LazyRow(
                 contentPadding = PaddingValues(16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 item {
                     FilterChip(
-                        selected = viewModel.filtroActual == 0,
-                        onClick = { viewModel.actualizarFiltro(0) },
+                        selected = viewModel.filtroActual is FiltroInicio.Todos,
+                        onClick = { viewModel.actualizarFiltro(FiltroInicio.Todos) },
                         label = { Text(stringResource(R.string.filtro_todos)) }
                     )
                 }
                 item {
                     FilterChip(
-                        selected = viewModel.filtroActual == 1,
-                        onClick = { viewModel.actualizarFiltro(1) },
+                        selected = viewModel.filtroActual is FiltroInicio.Favoritos,
+                        onClick = { viewModel.actualizarFiltro(FiltroInicio.Favoritos) },
                         label = { Text(stringResource(R.string.filtro_favoritos)) }
                     )
                 }
-                itemsIndexed(etiquetas) { index, etiqueta ->
-                    val filtroIndex = 2 + index
+                itemsIndexed(etiquetas) { _, etiqueta ->
+                    val esSeleccionado = (viewModel.filtroActual as? FiltroInicio.Etiqueta)?.nombre.equals(etiqueta.nombre, ignoreCase = true)
                     FilterChip(
-                        selected = viewModel.filtroActual == filtroIndex,
-                        onClick = { viewModel.actualizarFiltro(filtroIndex) },
+                        selected = esSeleccionado,
+                        onClick = { viewModel.actualizarFiltro(FiltroInicio.Etiqueta(etiqueta.nombre)) },
                         label = { Text(etiqueta.nombre) }
                     )
                 }
                 item {
                     FilterChip(
-                        selected = viewModel.filtroActual == indiceArchivados,
-                        onClick = { viewModel.actualizarFiltro(indiceArchivados) },
+                        selected = viewModel.filtroActual is FiltroInicio.Archivados,
+                        onClick = { viewModel.actualizarFiltro(FiltroInicio.Archivados) },
                         label = { Text("Archivados") }
                     )
                 }
@@ -189,6 +190,7 @@ fun Inicio(
                         val lugarYFecha = "$fechaStr · ${instante.lugar}"
 
                         Card(
+                            onClick = { onItemClick(instante.id) },
                             colors = CardDefaults.cardColors(
                                 containerColor = MaterialTheme.colorScheme.surfaceContainerLow
                             )
@@ -251,7 +253,7 @@ fun Inicio(
                                     }
 
                                     var menuExpandido by rememberSaveable(instante.id) { mutableStateOf(false) }
-                                    var mostrarDialogoEliminar by remember { mutableStateOf(false) }
+                                    var mostrarDialogoEliminar by rememberSaveable(instante.id) { mutableStateOf(false) }
 
                                     Box {
                                         IconButton(onClick = { menuExpandido = true }) {

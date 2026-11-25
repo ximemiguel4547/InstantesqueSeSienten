@@ -27,6 +27,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModelProvider
 import com.instantes.app.data.entity.EtiquetaEntity
 import com.instantes.app.ui.viewmodel.NuevoInstanteViewModel
@@ -64,18 +65,9 @@ fun NuevoInstante(
         }
     }
 
-    val tempFile = remember {
-        File(context.filesDir, "camera_${System.currentTimeMillis()}.jpg")
-    }
-    val tempUri = remember {
-        Uri.fromFile(tempFile)
-    }
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
     ) { success ->
-        if (success) {
-            viewModel.actualizarFotoUri(tempUri.toString(), esTemporal = true)
-        }
     }
 
     val galleryLauncher = rememberLauncherForActivityResult(
@@ -170,8 +162,23 @@ fun NuevoInstante(
                 OutlinedButton(
                     onClick = {
                         try {
-                            cameraLauncher.launch(tempUri)
-                        } catch (_: Exception) {}
+                            val fotosDir = File(context.filesDir, "fotos")
+                            if (!fotosDir.exists()) {
+                                fotosDir.mkdirs()
+                            }
+                            val photoFile = File(fotosDir, "instante_${System.currentTimeMillis()}.jpg")
+                            val photoUri = FileProvider.getUriForFile(
+                                context,
+                                "${context.packageName}.fileprovider",
+                                photoFile
+                            )
+                            viewModel.actualizarFotoUri(photoUri.toString(), esTemporal = true)
+                            cameraLauncher.launch(photoUri)
+                        } catch (e: Exception) {
+                            coroutineScope.launch {
+                                snackbarHostState.showSnackbar("Error al abrir la cámara")
+                            }
+                        }
                     },
                     modifier = Modifier.weight(1f)
                 ) {

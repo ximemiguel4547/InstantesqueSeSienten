@@ -1,7 +1,6 @@
 package com.instantes.app.ui.viewmodel
 
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
@@ -15,17 +14,24 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
+sealed interface FiltroInicio {
+    object Todos : FiltroInicio
+    object Favoritos : FiltroInicio
+    object Archivados : FiltroInicio
+    data class Etiqueta(val nombre: String) : FiltroInicio
+}
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class InicioViewModel(private val repository: InstantesRepository) : ViewModel() {
 
     var busqueda by mutableStateOf("")
         private set
 
-    var filtroActual by mutableIntStateOf(0)
+    var filtroActual by mutableStateOf<FiltroInicio>(FiltroInicio.Todos)
         private set
 
     private val _busquedaFlow = MutableStateFlow("")
-    private val _filtroFlow = MutableStateFlow(0)
+    private val _filtroFlow = MutableStateFlow<FiltroInicio>(FiltroInicio.Todos)
 
     val todasLasEtiquetas: StateFlow<List<Etiqueta>> = repository.todasLasEtiquetas.stateIn(
         scope = viewModelScope,
@@ -33,34 +39,12 @@ class InicioViewModel(private val repository: InstantesRepository) : ViewModel()
         initialValue = emptyList()
     )
 
-    val instantes: StateFlow<List<Instante>> = combine(
-        _busquedaFlow,
-        _filtroFlow
-    ) { query, filtro ->
-        Pair(query, filtro)
-    }.flatMapLatest { (query, filtro) ->
-        val baseFlow = when (filtro) {
-            1 -> repository.obtenerFavoritos()
-            4 -> repository.instantesArchivados
-            else -> {
-                // If filtro >= 2, check if it's a dynamic tag filter
-                repository.todosLosInstantes
-            }
-        }
-        baseFlow.map { lista ->
-            // If filtro is specific tag index >= 2, filter by tag name
-            // We handle dynamic tags in UI or here. Let's filter here if needed or pass through.
-            lista
-        }
-    }.combine(todasLasEtiquetas) { lista, etiquetas ->
-        val filtro = _filtroFlow.value
-        if (filtro >= 2 && filtro - 2 < etiquetas.size) {
-            val etiquetaSeleccionada = etiquetas[filtro - 2].nombre
-            lista.filter { instante ->
-                instante.etiquetas.any { it.nombre.equals(etiquetaSeleccionada, ignoreCase = true) }
-            }
-        } else {
-            lista
+    val instantes: StateFlow<List<Instante>> = _filtroFlow.flatMapLatest { filtro ->
+        when (filtro) {
+            is FiltroInicio.Favoritos -> repository.obtenerFavoritos()
+            is FiltroInicio.Archivados -> repository.instantesArchivados
+            is FiltroInicio.Etiqueta -> repository.obtenerInstantesPorEtiqueta(filtro.nombre)
+            is FiltroInicio.Todos -> repository.todosLosInstantes
         }
     }.combine(_busquedaFlow) { lista, query ->
         if (query.isBlank()) {
@@ -83,7 +67,7 @@ class InicioViewModel(private val repository: InstantesRepository) : ViewModel()
         _busquedaFlow.value = nuevaBusqueda
     }
 
-    fun actualizarFiltro(nuevoFiltro: Int) {
+    fun actualizarFiltro(nuevoFiltro: FiltroInicio) {
         filtroActual = nuevoFiltro
         _filtroFlow.value = nuevoFiltro
     }
@@ -103,22 +87,6 @@ class InicioViewModel(private val repository: InstantesRepository) : ViewModel()
     fun eliminarInstante(instanteId: Long, fotoUri: String) {
         viewModelScope.launch {
             repository.eliminarInstante(instanteId, fotoUri)
-        }
-    }
-
-    fun agregarEtiqueta(nombre: String) {
-        viewModelScope.launch {
-            if (nombre.isNotBlank()) {
-                repository.insertarEtiqueta(nombre)
-            }
-        }
-    }
-
-    fun eliminarEtiqueta(etiqueta: Etiqueta) {
-        viewModelScope.launch {
-            repository.eliminarEtiqueta(
-                EtiquetaEntity(id = etiqueta.id, nombre = etiqueta.nombre)
-            )
         }
     }
 

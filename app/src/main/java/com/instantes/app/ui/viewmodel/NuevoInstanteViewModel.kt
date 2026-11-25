@@ -118,17 +118,22 @@ class NuevoInstanteViewModel(
                     null
                 }
 
+                val instanteOriginal = if (instanteIdParaEditar != null && instanteIdParaEditar > 0L) {
+                    repository.obtenerInstantePorId(instanteIdParaEditar)
+                } else null
+
                 val instante = InstanteEntity(
+                    id = instanteIdParaEditar ?: 0L,
                     titulo = titulo.trim(),
                     reflexion = reflexion.trim(),
                     fotoUri = fotoUri,
                     lugar = lugar.ifBlank { "Lugar desconocido" },
-                    latitud = null,
-                    longitud = null,
-                    fechaHora = System.currentTimeMillis(),
-                    esFavorito = false,
-                    citaId = null,
-                    archivado = false
+                    latitud = instanteOriginal?.latitud,
+                    longitud = instanteOriginal?.longitud,
+                    fechaHora = instanteOriginal?.fechaHora ?: System.currentTimeMillis(),
+                    esFavorito = instanteOriginal?.esFavorito ?: false,
+                    citaId = instanteOriginal?.cita?.id,
+                    archivado = instanteOriginal?.archivado ?: false
                 )
 
                 if (instanteIdParaEditar != null && instanteIdParaEditar > 0L) {
