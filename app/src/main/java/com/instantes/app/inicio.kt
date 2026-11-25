@@ -15,12 +15,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
 import com.instantes.app.ui.viewmodel.InicioViewModel
@@ -31,7 +33,9 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Inicio(
-    onNuevoClick: () -> Unit = {}
+    onNuevoClick: () -> Unit = {},
+    onEditarClick: (Long) -> Unit = {},
+    onCitasClick: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val activity = context as? ComponentActivity
@@ -49,13 +53,7 @@ fun Inicio(
     }
 
     val instantes by viewModel.instantes.collectAsState()
-
-    val filtros = listOf(
-        R.string.filtro_todos,
-        R.string.filtro_favoritos,
-        R.string.filtro_naturaleza,
-        R.string.filtro_arte
-    )
+    val etiquetas by viewModel.todasLasEtiquetas.collectAsState()
 
     Scaffold(
         topBar = {
@@ -91,7 +89,7 @@ fun Inicio(
                 )
                 NavigationBarItem(
                     selected = false,
-                    onClick = {},
+                    onClick = onCitasClick,
                     icon = { Icon(Icons.Default.Star, contentDescription = null) },
                     label = { Text(stringResource(R.string.nav_citas)) }
                 )
@@ -117,15 +115,38 @@ fun Inicio(
                     .padding(horizontal = 16.dp)
             )
 
+            val indiceArchivados = 2 + etiquetas.size
             LazyRow(
                 contentPadding = PaddingValues(16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                itemsIndexed(filtros) { indice, texto ->
+                item {
                     FilterChip(
-                        selected = viewModel.filtroActual == indice,
-                        onClick = { viewModel.actualizarFiltro(indice) },
-                        label = { Text(stringResource(texto)) }
+                        selected = viewModel.filtroActual == 0,
+                        onClick = { viewModel.actualizarFiltro(0) },
+                        label = { Text(stringResource(R.string.filtro_todos)) }
+                    )
+                }
+                item {
+                    FilterChip(
+                        selected = viewModel.filtroActual == 1,
+                        onClick = { viewModel.actualizarFiltro(1) },
+                        label = { Text(stringResource(R.string.filtro_favoritos)) }
+                    )
+                }
+                itemsIndexed(etiquetas) { index, etiqueta ->
+                    val filtroIndex = 2 + index
+                    FilterChip(
+                        selected = viewModel.filtroActual == filtroIndex,
+                        onClick = { viewModel.actualizarFiltro(filtroIndex) },
+                        label = { Text(etiqueta.nombre) }
+                    )
+                }
+                item {
+                    FilterChip(
+                        selected = viewModel.filtroActual == indiceArchivados,
+                        onClick = { viewModel.actualizarFiltro(indiceArchivados) },
+                        label = { Text("Archivados") }
                     )
                 }
             }
@@ -137,11 +158,21 @@ fun Inicio(
                         .padding(32.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = stringResource(R.string.no_hay_instantes),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            imageVector = Icons.Default.FavoriteBorder,
+                            contentDescription = null,
+                            modifier = Modifier.size(64.dp),
+                            tint = MaterialTheme.colorScheme.outline
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "Agrega esos momentos que te hicieron sentir",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
             } else {
                 LazyVerticalGrid(
@@ -208,14 +239,78 @@ fun Inicio(
                                         style = MaterialTheme.typography.bodySmall
                                     )
                                 }
-                                IconButton(onClick = {
-                                    viewModel.alternarFavorito(instante.id, instante.esFavorito)
-                                }) {
-                                    Icon(
-                                        imageVector = Icons.Default.Favorite,
-                                        contentDescription = stringResource(R.string.desc_favorito),
-                                        tint = if (instante.esFavorito) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
-                                    )
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    IconButton(onClick = {
+                                        viewModel.alternarFavorito(instante.id, instante.esFavorito)
+                                    }) {
+                                        Icon(
+                                            imageVector = Icons.Default.Favorite,
+                                            contentDescription = stringResource(R.string.desc_favorito),
+                                            tint = if (instante.esFavorito) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+                                        )
+                                    }
+
+                                    var menuExpandido by rememberSaveable(instante.id) { mutableStateOf(false) }
+                                    var mostrarDialogoEliminar by remember { mutableStateOf(false) }
+
+                                    Box {
+                                        IconButton(onClick = { menuExpandido = true }) {
+                                            Icon(
+                                                imageVector = Icons.Default.MoreVert,
+                                                contentDescription = "Opciones"
+                                            )
+                                        }
+                                        DropdownMenu(
+                                            expanded = menuExpandido,
+                                            onDismissRequest = { menuExpandido = false }
+                                        ) {
+                                            DropdownMenuItem(
+                                                text = { Text("Editar") },
+                                                onClick = {
+                                                    menuExpandido = false
+                                                    onEditarClick(instante.id)
+                                                }
+                                            )
+                                            DropdownMenuItem(
+                                                text = { Text(if (instante.archivado) "Desarchivar" else "Archivar") },
+                                                onClick = {
+                                                    menuExpandido = false
+                                                    viewModel.archivarInstante(instante.id, instante.archivado)
+                                                }
+                                            )
+                                            DropdownMenuItem(
+                                                text = { Text("Eliminar") },
+                                                onClick = {
+                                                    menuExpandido = false
+                                                    mostrarDialogoEliminar = true
+                                                }
+                                            )
+                                        }
+                                    }
+
+                                    if (mostrarDialogoEliminar) {
+                                        AlertDialog(
+                                            onDismissRequest = { mostrarDialogoEliminar = false },
+                                            title = { Text("Eliminar instante") },
+                                            text = { Text("¿Estás seguro de que deseas eliminar este instante? Esta acción no se puede deshacer.") },
+                                            confirmButton = {
+                                                Button(
+                                                    onClick = {
+                                                        mostrarDialogoEliminar = false
+                                                        viewModel.eliminarInstante(instante.id, instante.fotoUri)
+                                                    },
+                                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                                                ) {
+                                                    Text("Eliminar")
+                                                }
+                                            },
+                                            dismissButton = {
+                                                TextButton(onClick = { mostrarDialogoEliminar = false }) {
+                                                    Text("Cancelar")
+                                                }
+                                            }
+                                        )
+                                    }
                                 }
                             }
                         }

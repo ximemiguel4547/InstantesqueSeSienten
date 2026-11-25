@@ -5,14 +5,18 @@ import android.net.Uri
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,29 +28,35 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
+import com.instantes.app.data.entity.EtiquetaEntity
 import com.instantes.app.ui.viewmodel.NuevoInstanteViewModel
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NuevoInstante(onVolver: () -> Unit = {}) {
+fun NuevoInstante(
+    onVolver: () -> Unit = {},
+    instanteId: Long? = null
+) {
     val context = LocalContext.current
     val activity = context as? ComponentActivity
 
-    val viewModel: NuevoInstanteViewModel = remember(activity) {
+    val viewModel: NuevoInstanteViewModel = remember(activity, instanteId) {
         val repo = (context.applicationContext as InstantesApplication).repository
         if (activity != null) {
             ViewModelProvider(
                 activity,
-                NuevoInstanteViewModel.Factory(repo)
+                NuevoInstanteViewModel.Factory(repo, instanteId)
             )[NuevoInstanteViewModel::class.java]
         } else {
-            NuevoInstanteViewModel(repo)
+            NuevoInstanteViewModel(repo, instanteId)
         }
     }
 
     val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         viewModel.eventoUi.collectLatest { mensaje ->
@@ -54,7 +64,6 @@ fun NuevoInstante(onVolver: () -> Unit = {}) {
         }
     }
 
-    // Camera temp file & launcher
     val tempFile = remember {
         File(context.filesDir, "camera_${System.currentTimeMillis()}.jpg")
     }
@@ -65,31 +74,29 @@ fun NuevoInstante(onVolver: () -> Unit = {}) {
         contract = ActivityResultContracts.TakePicture()
     ) { success ->
         if (success) {
-            viewModel.actualizarFotoUri(tempUri.toString())
+            viewModel.actualizarFotoUri(tempUri.toString(), esTemporal = true)
         }
     }
 
-    // Gallery launcher
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
         uri?.let {
             val internalUriStr = viewModel.copiarUriAAlmacenamientoInterno(context, it)
-            viewModel.actualizarFotoUri(internalUriStr)
+            viewModel.actualizarFotoUri(internalUriStr, esTemporal = true)
         }
     }
 
-    val etiquetas = listOf(
-        R.string.filtro_naturaleza,
-        R.string.filtro_arte,
-        R.string.filtro_atardecer
-    )
+    val etiquetas by viewModel.todasLasEtiquetas.collectAsState()
+    var mostrarDialogoEtiqueta by remember { mutableStateOf(false) }
+    var nuevaEtiquetaNombre by remember { mutableStateOf("") }
+    val repo = (context.applicationContext as InstantesApplication).repository
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.nuevo_titulo)) },
+                title = { Text(if (instanteId != null && instanteId > 0L) "Editar instante" else stringResource(R.string.nuevo_titulo)) },
                 navigationIcon = {
                     IconButton(onClick = onVolver) {
                         Icon(
@@ -108,7 +115,6 @@ fun NuevoInstante(onVolver: () -> Unit = {}) {
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Área de la foto
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -138,6 +144,20 @@ fun NuevoInstante(onVolver: () -> Unit = {}) {
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
                     )
+                    IconButton(
+                        onClick = { viewModel.quitarFoto() },
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(8.dp)
+                            .size(32.dp)
+                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.7f), RoundedCornerShape(16.dp))
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Quitar foto",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                 } else {
                     Text(
                         text = stringResource(R.string.nuevo_foto),
@@ -146,7 +166,6 @@ fun NuevoInstante(onVolver: () -> Unit = {}) {
                 }
             }
 
-            // Cámara y galería
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedButton(
                     onClick = {
@@ -168,7 +187,6 @@ fun NuevoInstante(onVolver: () -> Unit = {}) {
                 }
             }
 
-            // Campos de texto
             OutlinedTextField(
                 value = viewModel.titulo,
                 onValueChange = { viewModel.titulo = it },
@@ -191,21 +209,44 @@ fun NuevoInstante(onVolver: () -> Unit = {}) {
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // Etiquetas
             Text(
                 text = stringResource(R.string.nuevo_etiquetas),
                 style = MaterialTheme.typography.titleSmall
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 etiquetas.forEach { etiqueta ->
+                    val seleccionado = etiqueta.id in viewModel.seleccionadas
                     FilterChip(
-                        selected = etiqueta in viewModel.seleccionadas,
+                        selected = seleccionado,
                         onClick = {
-                            if (etiqueta in viewModel.seleccionadas) viewModel.seleccionadas.remove(etiqueta)
-                            else viewModel.seleccionadas.add(etiqueta)
+                            if (seleccionado) viewModel.seleccionadas.remove(etiqueta.id)
+                            else viewModel.seleccionadas.add(etiqueta.id)
                         },
-                        label = { Text(stringResource(etiqueta)) }
+                        label = { Text(etiqueta.nombre) },
+                        modifier = Modifier.combinedClickable(
+                            onClick = {
+                                if (seleccionado) viewModel.seleccionadas.remove(etiqueta.id)
+                                else viewModel.seleccionadas.add(etiqueta.id)
+                            },
+                            onLongClick = {
+                                coroutineScope.launch {
+                                    repo.eliminarEtiqueta(EtiquetaEntity(id = etiqueta.id, nombre = etiqueta.nombre))
+                                }
+                            }
+                        )
                     )
+                }
+                OutlinedButton(
+                    onClick = { mostrarDialogoEtiqueta = true },
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Etiqueta")
                 }
             }
 
@@ -216,7 +257,6 @@ fun NuevoInstante(onVolver: () -> Unit = {}) {
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // Cancelar y Guardar
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End
@@ -233,6 +273,42 @@ fun NuevoInstante(onVolver: () -> Unit = {}) {
                     Text(stringResource(R.string.nuevo_guardar))
                 }
             }
+        }
+
+        if (mostrarDialogoEtiqueta) {
+            AlertDialog(
+                onDismissRequest = { mostrarDialogoEtiqueta = false },
+                title = { Text("Nueva Etiqueta") },
+                text = {
+                    OutlinedTextField(
+                        value = nuevaEtiquetaNombre,
+                        onValueChange = { nuevaEtiquetaNombre = it },
+                        label = { Text("Nombre de la etiqueta") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            if (nuevaEtiquetaNombre.isNotBlank()) {
+                                coroutineScope.launch {
+                                    repo.insertarEtiqueta(nuevaEtiquetaNombre.trim())
+                                    nuevaEtiquetaNombre = ""
+                                    mostrarDialogoEtiqueta = false
+                                }
+                            }
+                        }
+                    ) {
+                        Text("Agregar")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { mostrarDialogoEtiqueta = false }) {
+                        Text("Cancelar")
+                    }
+                }
+            )
         }
     }
 }

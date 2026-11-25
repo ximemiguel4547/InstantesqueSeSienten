@@ -23,7 +23,7 @@ import kotlinx.coroutines.launch
         CitaEntity::class,
         InstanteEtiquetaCrossRef::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -43,6 +43,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "instantes_database"
                 )
+                    .fallbackToDestructiveMigration()
                     .addCallback(AppDatabaseCallback())
                     .build()
                 INSTANCE = instance
@@ -56,9 +57,7 @@ abstract class AppDatabase : RoomDatabase() {
                 INSTANCE?.let { database ->
                     CoroutineScope(Dispatchers.IO).launch {
                         val etiquetaDao = database.etiquetaDao()
-                        val citaDao = database.citaDao()
-                        val instanteDao = database.instanteDao()
-
+                        // Solo dejamos las etiquetas iniciales (sin instantes de ejemplo)
                         etiquetaDao.insertarEtiquetas(
                             listOf(
                                 EtiquetaEntity(nombre = "Naturaleza"),
@@ -67,42 +66,6 @@ abstract class AppDatabase : RoomDatabase() {
                                 EtiquetaEntity(nombre = "Ciudad")
                             )
                         )
-
-                        val citaId = citaDao.insertarCita(
-                            CitaEntity(
-                                texto = "La luz es el alma de la fotografía.",
-                                autor = "Desconocido",
-                                obra = "Reflexiones del alma",
-                                esFavorita = true
-                            )
-                        )
-
-                        val instanteId1 = instanteDao.insertarInstante(
-                            InstanteEntity(
-                                titulo = "Mirador al ocaso",
-                                reflexion = "Un momento de paz contemplando el atardecer en el horizonte.",
-                                fotoUri = "",
-                                lugar = "Mirador",
-                                fechaHora = System.currentTimeMillis() - 86400000L,
-                                esFavorito = true,
-                                citaId = citaId
-                            )
-                        )
-
-                        val instanteId2 = instanteDao.insertarInstante(
-                            InstanteEntity(
-                                titulo = "Lago al alba",
-                                reflexion = "El reflejo del agua matutina transmitiendo calma absoluta.",
-                                fotoUri = "",
-                                lugar = "Lago",
-                                fechaHora = System.currentTimeMillis() - 172800000L,
-                                esFavorito = false,
-                                citaId = null
-                            )
-                        )
-
-                        instanteDao.insertarInstanteEtiqueta(InstanteEtiquetaCrossRef(instanteId1, 3L))
-                        instanteDao.insertarInstanteEtiqueta(InstanteEtiquetaCrossRef(instanteId2, 1L))
                     }
                 }
             }

@@ -10,6 +10,7 @@ data class Instante(
     val longitud: Double?,
     val fechaHora: Long,
     val esFavorito: Boolean,
+    val archivado: Boolean,
     val cita: Cita?,
     val etiquetas: List<Etiqueta>
 )

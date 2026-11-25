@@ -22,31 +22,42 @@ interface InstanteDao {
     fun insertarInstanteEtiqueta(crossRef: InstanteEtiquetaCrossRef): Long
 
     @Query("DELETE FROM instante_etiqueta WHERE instanteId = :instanteId")
-    fun eliminarEtiquetasDeInstante(instanteId: Long): Int
+    fun eliminarEtiquetasDeInstante(instanteId: Long)
 
     @Update
-    fun actualizarInstante(instante: InstanteEntity): Int
+    fun actualizarInstante(instante: InstanteEntity)
 
-    @Delete
-    fun eliminarInstante(instante: InstanteEntity): Int
+    @Query("DELETE FROM instantes WHERE id = :id")
+    fun eliminarInstantePorId(id: Long)
 
     @Query("UPDATE instantes SET esFavorito = :esFavorito WHERE id = :id")
-    fun actualizarFavorito(id: Long, esFavorito: Boolean): Int
+    fun actualizarFavorito(id: Long, esFavorito: Boolean)
+
+    @Query("UPDATE instantes SET archivado = :archivado WHERE id = :id")
+    fun actualizarArchivado(id: Long, archivado: Boolean)
 
     @Transaction
-    @Query("SELECT * FROM instantes ORDER BY fechaHora DESC")
-    fun obtenerTodosInstantesCompletos(): Flow<List<InstanteCompleto>>
+    @Query("SELECT * FROM instantes WHERE id = :id")
+    fun obtenerInstanteCompletoPorId(id: Long): InstanteCompleto?
 
     @Transaction
-    @Query("SELECT * FROM instantes WHERE esFavorito = 1 ORDER BY fechaHora DESC")
+    @Query("SELECT * FROM instantes WHERE archivado = 0 ORDER BY fechaHora DESC")
+    fun obtenerInstantesNoArchivados(): Flow<List<InstanteCompleto>>
+
+    @Transaction
+    @Query("SELECT * FROM instantes WHERE archivado = 1 ORDER BY fechaHora DESC")
+    fun obtenerInstantesArchivados(): Flow<List<InstanteCompleto>>
+
+    @Transaction
+    @Query("SELECT * FROM instantes WHERE esFavorito = 1 AND archivado = 0 ORDER BY fechaHora DESC")
     fun obtenerInstantesFavoritos(): Flow<List<InstanteCompleto>>
 
     @Transaction
     @Query("""
         SELECT * FROM instantes 
-        WHERE titulo LIKE '%' || :query || '%' 
+        WHERE archivado = 0 AND (titulo LIKE '%' || :query || '%' 
            OR reflexion LIKE '%' || :query || '%' 
-           OR lugar LIKE '%' || :query || '%' 
+           OR lugar LIKE '%' || :query || '%') 
         ORDER BY fechaHora DESC
     """)
     fun buscarInstantes(query: String): Flow<List<InstanteCompleto>>
@@ -56,7 +67,7 @@ interface InstanteDao {
         SELECT DISTINCT instantes.* FROM instantes 
         INNER JOIN instante_etiqueta ON instantes.id = instante_etiqueta.instanteId 
         INNER JOIN etiquetas ON instante_etiqueta.etiquetaId = etiquetas.id 
-        WHERE etiquetas.nombre = :nombreEtiqueta 
+        WHERE instantes.archivado = 0 AND etiquetas.nombre = :nombreEtiqueta 
         ORDER BY fechaHora DESC
     """)
     fun obtenerInstantesPorEtiqueta(nombreEtiqueta: String): Flow<List<InstanteCompleto>>

@@ -35,6 +35,7 @@ fun InstanteCompleto.toDomain(): Instante {
         longitud = instante.longitud,
         fechaHora = instante.fechaHora,
         esFavorito = instante.esFavorito,
+        archivado = instante.archivado,
         cita = cita?.toDomain(),
         etiquetas = etiquetas.map { it.toDomain() }
     )

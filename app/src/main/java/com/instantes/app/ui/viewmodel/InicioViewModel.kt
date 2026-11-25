@@ -7,6 +7,8 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.instantes.app.data.entity.EtiquetaEntity
+import com.instantes.app.domain.model.Etiqueta
 import com.instantes.app.domain.model.Instante
 import com.instantes.app.domain.repository.InstantesRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -25,6 +27,12 @@ class InicioViewModel(private val repository: InstantesRepository) : ViewModel()
     private val _busquedaFlow = MutableStateFlow("")
     private val _filtroFlow = MutableStateFlow(0)
 
+    val todasLasEtiquetas: StateFlow<List<Etiqueta>> = repository.todasLasEtiquetas.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
     val instantes: StateFlow<List<Instante>> = combine(
         _busquedaFlow,
         _filtroFlow
@@ -33,19 +41,35 @@ class InicioViewModel(private val repository: InstantesRepository) : ViewModel()
     }.flatMapLatest { (query, filtro) ->
         val baseFlow = when (filtro) {
             1 -> repository.obtenerFavoritos()
-            2 -> repository.obtenerInstantesPorEtiqueta("Naturaleza")
-            3 -> repository.obtenerInstantesPorEtiqueta("Arte")
-            else -> repository.todosLosInstantes
+            4 -> repository.instantesArchivados
+            else -> {
+                // If filtro >= 2, check if it's a dynamic tag filter
+                repository.todosLosInstantes
+            }
         }
         baseFlow.map { lista ->
-            if (query.isBlank()) {
-                lista
-            } else {
-                lista.filter {
-                    it.titulo.contains(query, ignoreCase = true) ||
-                    it.reflexion.contains(query, ignoreCase = true) ||
-                    it.lugar.contains(query, ignoreCase = true)
-                }
+            // If filtro is specific tag index >= 2, filter by tag name
+            // We handle dynamic tags in UI or here. Let's filter here if needed or pass through.
+            lista
+        }
+    }.combine(todasLasEtiquetas) { lista, etiquetas ->
+        val filtro = _filtroFlow.value
+        if (filtro >= 2 && filtro - 2 < etiquetas.size) {
+            val etiquetaSeleccionada = etiquetas[filtro - 2].nombre
+            lista.filter { instante ->
+                instante.etiquetas.any { it.nombre.equals(etiquetaSeleccionada, ignoreCase = true) }
+            }
+        } else {
+            lista
+        }
+    }.combine(_busquedaFlow) { lista, query ->
+        if (query.isBlank()) {
+            lista
+        } else {
+            lista.filter {
+                it.titulo.contains(query, ignoreCase = true) ||
+                it.reflexion.contains(query, ignoreCase = true) ||
+                it.lugar.contains(query, ignoreCase = true)
             }
         }
     }.stateIn(
@@ -67,6 +91,34 @@ class InicioViewModel(private val repository: InstantesRepository) : ViewModel()
     fun alternarFavorito(instanteId: Long, esFavoritoActual: Boolean) {
         viewModelScope.launch {
             repository.actualizarFavorito(instanteId, !esFavoritoActual)
+        }
+    }
+
+    fun archivarInstante(instanteId: Long, archivadoActual: Boolean) {
+        viewModelScope.launch {
+            repository.actualizarArchivado(instanteId, !archivadoActual)
+        }
+    }
+
+    fun eliminarInstante(instanteId: Long, fotoUri: String) {
+        viewModelScope.launch {
+            repository.eliminarInstante(instanteId, fotoUri)
+        }
+    }
+
+    fun agregarEtiqueta(nombre: String) {
+        viewModelScope.launch {
+            if (nombre.isNotBlank()) {
+                repository.insertarEtiqueta(nombre)
+            }
+        }
+    }
+
+    fun eliminarEtiqueta(etiqueta: Etiqueta) {
+        viewModelScope.launch {
+            repository.eliminarEtiqueta(
+                EtiquetaEntity(id = etiqueta.id, nombre = etiqueta.nombre)
+            )
         }
     }
 

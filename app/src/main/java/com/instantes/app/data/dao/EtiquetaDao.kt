@@ -1,6 +1,7 @@
 package com.instantes.app.data.dao
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -13,7 +14,10 @@ interface EtiquetaDao {
     fun insertarEtiqueta(etiqueta: EtiquetaEntity): Long
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    fun insertarEtiquetas(etiquetas: List<EtiquetaEntity>): List<Long>
+    fun insertarEtiquetas(etiquetas: List<EtiquetaEntity>)
+
+    @Delete
+    fun eliminarEtiqueta(etiqueta: EtiquetaEntity)
 
     @Query("SELECT * FROM etiquetas ORDER BY nombre ASC")
     fun obtenerTodasEtiquetas(): Flow<List<EtiquetaEntity>>

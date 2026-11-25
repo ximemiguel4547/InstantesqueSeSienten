@@ -28,5 +28,6 @@ data class InstanteEntity(
     val longitud: Double? = null,
     val fechaHora: Long,
     val esFavorito: Boolean = false,
-    val citaId: Long? = null
+    val citaId: Long? = null,
+    val archivado: Boolean = false
 )
