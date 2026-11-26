@@ -14,7 +14,6 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
@@ -120,6 +119,7 @@ class CitasViewModel(private val repository: InstantesRepository) : ViewModel() 
 fun CitasScreen(
     onVolver: () -> Unit = {},
     onInicioClick: () -> Unit = {},
+    onFavoritosClick: () -> Unit = {},
     viewModel: CitasViewModel = rememberCitasViewModel()
 ) {
     SinTecladoCompleto {
@@ -178,9 +178,9 @@ fun CitasScreen(
                     )
                     NavigationBarItem(
                         selected = false,
-                        onClick = {},
-                        icon = { Icon(Icons.Default.Place, contentDescription = null) },
-                        label = { Text(stringResource(R.string.nav_mapa)) }
+                        onClick = onFavoritosClick,
+                        icon = { Icon(Icons.Default.Favorite, contentDescription = null) },
+                        label = { Text(stringResource(R.string.nav_favoritos)) }
                     )
                     NavigationBarItem(
                         selected = true,

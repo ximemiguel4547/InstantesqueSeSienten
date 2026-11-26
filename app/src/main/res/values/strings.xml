@@ -9,6 +9,7 @@
     <string name="inicio_nuevo_instante">Nuevo instante</string>
     <string name="nav_inicio">Inicio</string>
     <string name="nav_mapa">Mapa</string>
+    <string name="nav_favoritos">Favoritos</string>
     <string name="nav_citas">Citas</string>
     <string name="nav_perfil">Perfil</string>
 

@@ -12,6 +12,7 @@ import androidx.navigation.navArgument
 import com.instantes.app.data.local.PreferencesManager
 import com.instantes.app.ui.screen.CitasScreen
 import com.instantes.app.ui.screen.DetalleInstanteScreen
+import com.instantes.app.ui.screen.FavoritosScreen
 import com.instantes.app.ui.theme.AppInstantesqueSeSientenTheme
 import com.instantes.app.ui.theme.Bienvenida
 import kotlinx.coroutines.flow.first
@@ -48,7 +49,21 @@ class MainActivity : ComponentActivity() {
                             onNuevoClick = { navController.navigate("nuevo") },
                             onEditarClick = { id -> navController.navigate("nuevo?id=$id") },
                             onItemClick = { id -> navController.navigate("detalle/$id") },
-                            onCitasClick = { navController.navigate("citas") }
+                            onCitasClick = { navController.navigate("citas") },
+                            onFavoritosClick = { navController.navigate("favoritos") }
+                        )
+                    }
+                    composable("favoritos") {
+                        FavoritosScreen(
+                            onVolver = { navController.popBackStack() },
+                            onInicioClick = {
+                                navController.navigate("inicio") {
+                                    popUpTo("inicio") { inclusive = true }
+                                }
+                            },
+                            onCitasClick = { navController.navigate("citas") },
+                            onEditarClick = { id -> navController.navigate("nuevo?id=$id") },
+                            onItemClick = { id -> navController.navigate("detalle/$id") }
                         )
                     }
                     composable(
@@ -83,7 +98,8 @@ class MainActivity : ComponentActivity() {
                                 navController.navigate("inicio") {
                                     popUpTo("inicio") { inclusive = true }
                                 }
-                            }
+                            },
+                            onFavoritosClick = { navController.navigate("favoritos") }
                         )
                     }
                 }
