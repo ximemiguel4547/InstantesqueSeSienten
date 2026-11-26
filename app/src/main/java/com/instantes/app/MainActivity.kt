@@ -25,19 +25,24 @@ class MainActivity : ComponentActivity() {
 
         val prefsManager = PreferencesManager(applicationContext)
         val primeraVez = runBlocking { prefsManager.esPrimeraVez.first() }
-        val startDest = if (primeraVez) "bienvenida" else "inicio"
 
         setContent {
             AppInstantesqueSeSientenTheme {
                 val navController = rememberNavController()
 
-                NavHost(navController = navController, startDestination = startDest) {
+                NavHost(navController = navController, startDestination = "bienvenida") {
                     composable("bienvenida") {
                         Bienvenida(
+                            esPrimeraVez = primeraVez,
                             onComenzarClick = {
                                 runBlocking {
                                     prefsManager.setPrimeraVez(false)
                                 }
+                                navController.navigate("inicio") {
+                                    popUpTo("bienvenida") { inclusive = true }
+                                }
+                            },
+                            onAutoNavegar = {
                                 navController.navigate("inicio") {
                                     popUpTo("bienvenida") { inclusive = true }
                                 }
