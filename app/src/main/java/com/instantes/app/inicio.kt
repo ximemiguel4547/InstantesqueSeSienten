@@ -1,9 +1,7 @@
 package com.instantes.app
 
-import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.activity.ComponentActivity
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -11,6 +9,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -18,15 +17,17 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
+import coil.compose.AsyncImage
 import com.instantes.app.ui.viewmodel.FiltroInicio
 import com.instantes.app.ui.viewmodel.InicioViewModel
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -39,278 +40,301 @@ fun Inicio(
     onItemClick: (Long) -> Unit = {},
     onCitasClick: () -> Unit = {}
 ) {
-    val context = LocalContext.current
-    val activity = context as? ComponentActivity
+    SinTecladoCompleto {
+        val context = LocalContext.current
+        val activity = context as? ComponentActivity
 
-    val viewModel: InicioViewModel = remember(activity) {
-        val repo = (context.applicationContext as InstantesApplication).repository
-        if (activity != null) {
-            ViewModelProvider(
-                activity,
-                InicioViewModel.Factory(repo)
-            )[InicioViewModel::class.java]
-        } else {
-            InicioViewModel(repo)
-        }
-    }
-
-    val instantes by viewModel.instantes.collectAsState()
-    val etiquetas by viewModel.todasLasEtiquetas.collectAsState()
-
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text(stringResource(R.string.inicio_titulo)) }
-            )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = onNuevoClick,
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = stringResource(R.string.inicio_nuevo_instante)
-                )
-            }
-        },
-        bottomBar = {
-            NavigationBar {
-                NavigationBarItem(
-                    selected = true,
-                    onClick = {},
-                    icon = { Icon(Icons.Default.Home, contentDescription = null) },
-                    label = { Text(stringResource(R.string.nav_inicio)) }
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = {},
-                    icon = { Icon(Icons.Default.Place, contentDescription = null) },
-                    label = { Text(stringResource(R.string.nav_mapa)) }
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = onCitasClick,
-                    icon = { Icon(Icons.Default.Star, contentDescription = null) },
-                    label = { Text(stringResource(R.string.nav_citas)) }
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = {},
-                    icon = { Icon(Icons.Default.Person, contentDescription = null) },
-                    label = { Text(stringResource(R.string.nav_perfil)) }
-                )
+        val viewModel: InicioViewModel = remember(activity) {
+            val repo = (context.applicationContext as InstantesApplication).repository
+            if (activity != null) {
+                ViewModelProvider(
+                    activity,
+                    InicioViewModel.Factory(repo)
+                )[InicioViewModel::class.java]
+            } else {
+                InicioViewModel(repo)
             }
         }
-    ) { padding ->
-        Column(modifier = Modifier.padding(padding)) {
 
-            OutlinedTextField(
-                value = viewModel.busqueda,
-                onValueChange = { viewModel.actualizarBusqueda(it) },
-                placeholder = { Text(stringResource(R.string.inicio_buscar)) },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                singleLine = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-            )
+        val instantes by viewModel.instantes.collectAsState()
+        val etiquetas by viewModel.todasLasEtiquetas.collectAsState()
 
-            LazyRow(
-                contentPadding = PaddingValues(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                item {
-                    FilterChip(
-                        selected = viewModel.filtroActual is FiltroInicio.Todos,
-                        onClick = { viewModel.actualizarFiltro(FiltroInicio.Todos) },
-                        label = { Text(stringResource(R.string.filtro_todos)) }
-                    )
-                }
-                item {
-                    FilterChip(
-                        selected = viewModel.filtroActual is FiltroInicio.Favoritos,
-                        onClick = { viewModel.actualizarFiltro(FiltroInicio.Favoritos) },
-                        label = { Text(stringResource(R.string.filtro_favoritos)) }
-                    )
-                }
-                itemsIndexed(etiquetas) { _, etiqueta ->
-                    val esSeleccionado = (viewModel.filtroActual as? FiltroInicio.Etiqueta)?.nombre.equals(etiqueta.nombre, ignoreCase = true)
-                    FilterChip(
-                        selected = esSeleccionado,
-                        onClick = { viewModel.actualizarFiltro(FiltroInicio.Etiqueta(etiqueta.nombre)) },
-                        label = { Text(etiqueta.nombre) }
-                    )
-                }
-                item {
-                    FilterChip(
-                        selected = viewModel.filtroActual is FiltroInicio.Archivados,
-                        onClick = { viewModel.actualizarFiltro(FiltroInicio.Archivados) },
-                        label = { Text("Archivados") }
-                    )
-                }
-            }
-
-            if (instantes.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(32.dp),
-                    contentAlignment = Alignment.Center
+        Scaffold(
+            topBar = {
+                CenterAlignedTopAppBar(
+                    title = { Text(stringResource(R.string.inicio_titulo)) }
+                )
+            },
+            floatingActionButton = {
+                FloatingActionButton(
+                    onClick = onNuevoClick,
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            imageVector = Icons.Default.FavoriteBorder,
-                            contentDescription = null,
-                            modifier = Modifier.size(64.dp),
-                            tint = MaterialTheme.colorScheme.outline
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = stringResource(R.string.inicio_nuevo_instante)
+                    )
+                }
+            },
+            bottomBar = {
+                NavigationBar {
+                    NavigationBarItem(
+                        selected = true,
+                        onClick = {},
+                        icon = { Icon(Icons.Default.Home, contentDescription = null) },
+                        label = { Text(stringResource(R.string.nav_inicio)) }
+                    )
+                    NavigationBarItem(
+                        selected = false,
+                        onClick = {},
+                        icon = { Icon(Icons.Default.Place, contentDescription = null) },
+                        label = { Text(stringResource(R.string.nav_mapa)) }
+                    )
+                    NavigationBarItem(
+                        selected = false,
+                        onClick = onCitasClick,
+                        icon = { Icon(Icons.Default.Star, contentDescription = null) },
+                        label = { Text(stringResource(R.string.nav_citas)) }
+                    )
+                    NavigationBarItem(
+                        selected = false,
+                        onClick = {},
+                        icon = { Icon(Icons.Default.Person, contentDescription = null) },
+                        label = { Text(stringResource(R.string.nav_perfil)) }
+                    )
+                }
+            }
+        ) { padding ->
+            Column(modifier = Modifier.padding(padding)) {
+
+                OutlinedTextField(
+                    value = viewModel.busqueda,
+                    onValueChange = { viewModel.actualizarBusqueda(it) },
+                    placeholder = { Text(stringResource(R.string.inicio_buscar)) },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                )
+
+                LazyRow(
+                    contentPadding = PaddingValues(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    item {
+                        FilterChip(
+                            selected = viewModel.filtroActual is FiltroInicio.Todos,
+                            onClick = { viewModel.actualizarFiltro(FiltroInicio.Todos) },
+                            label = { Text(stringResource(R.string.filtro_todos)) }
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "Agrega esos momentos que te hicieron sentir",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center
+                    }
+                    item {
+                        FilterChip(
+                            selected = viewModel.filtroActual is FiltroInicio.Favoritos,
+                            onClick = { viewModel.actualizarFiltro(FiltroInicio.Favoritos) },
+                            label = { Text(stringResource(R.string.filtro_favoritos)) }
+                        )
+                    }
+                    itemsIndexed(etiquetas) { _, etiqueta ->
+                        val esSeleccionado = (viewModel.filtroActual as? FiltroInicio.Etiqueta)?.nombre.equals(etiqueta.nombre, ignoreCase = true)
+                        FilterChip(
+                            selected = esSeleccionado,
+                            onClick = { viewModel.actualizarFiltro(FiltroInicio.Etiqueta(etiqueta.nombre)) },
+                            label = { Text(etiqueta.nombre) }
+                        )
+                    }
+                    item {
+                        FilterChip(
+                            selected = viewModel.filtroActual is FiltroInicio.Archivados,
+                            onClick = { viewModel.actualizarFiltro(FiltroInicio.Archivados) },
+                            label = { Text("Archivados") }
                         )
                     }
                 }
-            } else {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    contentPadding = PaddingValues(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(instantes) { instante ->
-                        val fechaStr = remember(instante.fechaHora) {
-                            val sdf = SimpleDateFormat("dd MMM", Locale.getDefault())
-                            sdf.format(Date(instante.fechaHora))
-                        }
-                        val lugarYFecha = "$fechaStr · ${instante.lugar}"
 
-                        Card(
-                            onClick = { onItemClick(instante.id) },
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                if (instantes.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                imageVector = Icons.Default.FavoriteBorder,
+                                contentDescription = null,
+                                modifier = Modifier.size(64.dp),
+                                tint = MaterialTheme.colorScheme.outline
                             )
-                        ) {
-                            val bitmap = remember(instante.fotoUri) {
-                                try {
-                                    if (instante.fotoUri.isNotBlank()) {
-                                        val uri = Uri.parse(instante.fotoUri)
-                                        if (uri.scheme == "file" || uri.path != null) {
-                                            BitmapFactory.decodeFile(uri.path)
-                                        } else {
-                                            null
-                                        }
-                                    } else null
-                                } catch (_: Exception) {
-                                    null
-                                }
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = "Agrega esos momentos que te hicieron sentir",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                } else {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        contentPadding = PaddingValues(16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(instantes) { instante ->
+                            val fechaStr = remember(instante.fechaHora) {
+                                val sdf = SimpleDateFormat("dd MMM", Locale.getDefault())
+                                sdf.format(Date(instante.fechaHora))
                             }
-                            if (bitmap != null) {
-                                Image(
-                                    bitmap = bitmap.asImageBitmap(),
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(110.dp),
-                                    contentScale = ContentScale.Crop
-                                )
-                            } else {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(110.dp)
-                                        .background(MaterialTheme.colorScheme.primaryContainer)
-                                )
-                            }
+                            val lugarYFecha = "$fechaStr · ${instante.lugar}"
 
-                            Row(
-                                modifier = Modifier.padding(12.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                            Card(
+                                onClick = { onItemClick(instante.id) },
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                                ),
+                                modifier = Modifier.fillMaxWidth()
                             ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = instante.titulo,
-                                        style = MaterialTheme.typography.titleSmall
-                                    )
-                                    Text(
-                                        text = lugarYFecha,
-                                        style = MaterialTheme.typography.bodySmall
-                                    )
-                                }
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    IconButton(onClick = {
-                                        viewModel.alternarFavorito(instante.id, instante.esFavorito)
-                                    }) {
-                                        Icon(
-                                            imageVector = Icons.Default.Favorite,
-                                            contentDescription = stringResource(R.string.desc_favorito),
-                                            tint = if (instante.esFavorito) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
-                                        )
-                                    }
-
-                                    var menuExpandido by rememberSaveable(instante.id) { mutableStateOf(false) }
-                                    var mostrarDialogoEliminar by rememberSaveable(instante.id) { mutableStateOf(false) }
-
-                                    Box {
-                                        IconButton(onClick = { menuExpandido = true }) {
-                                            Icon(
-                                                imageVector = Icons.Default.MoreVert,
-                                                contentDescription = "Opciones"
+                                Column {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(110.dp)
+                                    ) {
+                                        val fotoPath = rutaDeFotoInicio(instante.fotoUri)
+                                        val fotoFile = if (fotoPath.isNotBlank()) File(fotoPath) else null
+                                        if (fotoFile != null && fotoFile.exists()) {
+                                            AsyncImage(
+                                                model = fotoFile,
+                                                contentDescription = null,
+                                                modifier = Modifier.fillMaxSize(),
+                                                contentScale = ContentScale.Crop
                                             )
+                                        } else {
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxSize()
+                                                    .background(MaterialTheme.colorScheme.primaryContainer),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.FavoriteBorder,
+                                                    contentDescription = null,
+                                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                                )
+                                            }
                                         }
-                                        DropdownMenu(
-                                            expanded = menuExpandido,
-                                            onDismissRequest = { menuExpandido = false }
+
+                                        Row(
+                                            modifier = Modifier
+                                                .align(Alignment.TopEnd)
+                                                .padding(4.dp)
+                                                .background(
+                                                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.6f),
+                                                    shape = RoundedCornerShape(16.dp)
+                                                ),
+                                            verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            DropdownMenuItem(
-                                                text = { Text("Editar") },
-                                                onClick = {
-                                                    menuExpandido = false
-                                                    onEditarClick(instante.id)
-                                                }
-                                            )
-                                            DropdownMenuItem(
-                                                text = { Text(if (instante.archivado) "Desarchivar" else "Archivar") },
-                                                onClick = {
-                                                    menuExpandido = false
-                                                    viewModel.archivarInstante(instante.id, instante.archivado)
-                                                }
-                                            )
-                                            DropdownMenuItem(
-                                                text = { Text("Eliminar") },
-                                                onClick = {
-                                                    menuExpandido = false
-                                                    mostrarDialogoEliminar = true
-                                                }
-                                            )
-                                        }
-                                    }
+                                            IconButton(
+                                                onClick = { viewModel.alternarFavorito(instante.id, instante.esFavorito) },
+                                                modifier = Modifier.size(32.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Favorite,
+                                                    contentDescription = stringResource(R.string.desc_favorito),
+                                                    tint = if (instante.esFavorito) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                            }
 
-                                    if (mostrarDialogoEliminar) {
-                                        AlertDialog(
-                                            onDismissRequest = { mostrarDialogoEliminar = false },
-                                            title = { Text("Eliminar instante") },
-                                            text = { Text("¿Estás seguro de que deseas eliminar este instante? Esta acción no se puede deshacer.") },
-                                            confirmButton = {
-                                                Button(
-                                                    onClick = {
-                                                        mostrarDialogoEliminar = false
-                                                        viewModel.eliminarInstante(instante.id, instante.fotoUri)
-                                                    },
-                                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                                            var menuExpandido by rememberSaveable(instante.id) { mutableStateOf(false) }
+                                            var mostrarDialogoEliminar by rememberSaveable(instante.id) { mutableStateOf(false) }
+
+                                            Box {
+                                                IconButton(
+                                                    onClick = { menuExpandido = true },
+                                                    modifier = Modifier.size(32.dp)
                                                 ) {
-                                                    Text("Eliminar")
+                                                    Icon(
+                                                        imageVector = Icons.Default.MoreVert,
+                                                        contentDescription = "Opciones",
+                                                        modifier = Modifier.size(18.dp)
+                                                    )
                                                 }
-                                            },
-                                            dismissButton = {
-                                                TextButton(onClick = { mostrarDialogoEliminar = false }) {
-                                                    Text("Cancelar")
+                                                DropdownMenu(
+                                                    expanded = menuExpandido,
+                                                    onDismissRequest = { menuExpandido = false }
+                                                ) {
+                                                    DropdownMenuItem(
+                                                        text = { Text("Editar") },
+                                                        onClick = {
+                                                            menuExpandido = false
+                                                            onEditarClick(instante.id)
+                                                        }
+                                                    )
+                                                    DropdownMenuItem(
+                                                        text = { Text(if (instante.archivado) "Desarchivar" else "Archivar") },
+                                                        onClick = {
+                                                            menuExpandido = false
+                                                            viewModel.archivarInstante(instante.id, instante.archivado)
+                                                        }
+                                                    )
+                                                    DropdownMenuItem(
+                                                        text = { Text("Eliminar") },
+                                                        onClick = {
+                                                            menuExpandido = false
+                                                            mostrarDialogoEliminar = true
+                                                        }
+                                                    )
                                                 }
                                             }
+
+                                            if (mostrarDialogoEliminar) {
+                                                AlertDialog(
+                                                    onDismissRequest = { mostrarDialogoEliminar = false },
+                                                    title = { Text("Eliminar instante") },
+                                                    text = { Text("¿Estás seguro de que deseas eliminar este instante? Esta acción no se puede deshacer.") },
+                                                    confirmButton = {
+                                                        Button(
+                                                            onClick = {
+                                                                mostrarDialogoEliminar = false
+                                                                viewModel.eliminarInstante(instante.id, instante.fotoUri)
+                                                            },
+                                                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                                                        ) {
+                                                            Text("Eliminar")
+                                                        }
+                                                    },
+                                                    dismissButton = {
+                                                        TextButton(onClick = { mostrarDialogoEliminar = false }) {
+                                                            Text("Cancelar")
+                                                        }
+                                                    }
+                                                )
+                                            }
+                                        }
+                                    }
+
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(12.dp)
+                                    ) {
+                                        Text(
+                                            text = instante.titulo,
+                                            style = MaterialTheme.typography.titleSmall,
+                                            maxLines = 2,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(
+                                            text = lugarYFecha,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
                                         )
                                     }
                                 }
@@ -322,3 +346,5 @@ fun Inicio(
         }
     }
 }
+
+private fun rutaDeFotoInicio(fotoUri: String): String = if (fotoUri.startsWith("file://")) (Uri.parse(fotoUri).path ?: fotoUri) else fotoUri

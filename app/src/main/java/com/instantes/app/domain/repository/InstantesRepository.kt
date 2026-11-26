@@ -38,6 +38,7 @@ interface InstantesRepository {
     suspend fun eliminarInstante(id: Long, fotoUri: String)
 
     suspend fun insertarEtiqueta(nombre: String): Long
+    suspend fun actualizarEtiqueta(etiqueta: EtiquetaEntity)
     suspend fun eliminarEtiqueta(etiqueta: EtiquetaEntity)
     suspend fun obtenerEtiquetaPorNombre(nombre: String): EtiquetaEntity?
 

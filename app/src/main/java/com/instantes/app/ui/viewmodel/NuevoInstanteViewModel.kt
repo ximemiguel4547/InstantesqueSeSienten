@@ -11,6 +11,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.instantes.app.R
 import com.instantes.app.data.entity.CitaEntity
+import com.instantes.app.data.entity.EtiquetaEntity
 import com.instantes.app.data.entity.InstanteEntity
 import com.instantes.app.domain.model.Etiqueta
 import com.instantes.app.domain.repository.InstantesRepository
@@ -33,6 +34,7 @@ class NuevoInstanteViewModel(
     var reflexion by mutableStateOf("")
     var lugar by mutableStateOf("")
     var cita by mutableStateOf("")
+    var autorCita by mutableStateOf("")
     var fotoUri by mutableStateOf("")
     var esFotoTemporal by mutableStateOf(false)
 
@@ -63,6 +65,7 @@ class NuevoInstanteViewModel(
                 fotoUri = instante.fotoUri
                 esFotoTemporal = false
                 cita = instante.cita?.texto ?: ""
+                autorCita = instante.cita?.autor ?: ""
                 seleccionadas.clear()
                 seleccionadas.addAll(instante.etiquetas.map { it.id })
             }
@@ -85,16 +88,84 @@ class NuevoInstanteViewModel(
         esFotoTemporal = false
     }
 
+    fun limpiar() {
+        if (esFotoTemporal && fotoUri.isNotBlank()) {
+            borrarArchivoSiEsTemporal(fotoUri)
+        }
+        titulo = ""
+        reflexion = ""
+        lugar = ""
+        cita = ""
+        autorCita = ""
+        fotoUri = ""
+        esFotoTemporal = false
+        seleccionadas.clear()
+    }
+
+    fun cancelar(onVolver: () -> Unit) {
+        limpiar()
+        onVolver()
+    }
+
     private fun borrarArchivoSiEsTemporal(uriStr: String) {
         try {
-            val uri = Uri.parse(uriStr)
-            uri.path?.let { path ->
-                val file = File(path)
+            val path = if (uriStr.startsWith("file://")) Uri.parse(uriStr).path else uriStr
+            path?.let {
+                val file = File(it)
                 if (file.exists()) {
                     file.delete()
                 }
             }
         } catch (_: Exception) {}
+    }
+
+    fun agregarEtiqueta(nombre: String) {
+        viewModelScope.launch {
+            if (nombre.isNotBlank()) {
+                if (todasLasEtiquetas.value.size >= 10) {
+                    _eventoUi.emit("Máximo 10 etiquetas")
+                } else {
+                    repository.insertarEtiqueta(nombre)
+                }
+            }
+        }
+    }
+
+    fun actualizarEtiqueta(id: Long, nuevoNombre: String) {
+        viewModelScope.launch {
+            if (nuevoNombre.isNotBlank()) {
+                repository.actualizarEtiqueta(EtiquetaEntity(id = id, nombre = nuevoNombre.trim()))
+            }
+        }
+    }
+
+    fun eliminarEtiqueta(etiqueta: Etiqueta) {
+        viewModelScope.launch {
+            repository.eliminarEtiqueta(EtiquetaEntity(id = etiqueta.id, nombre = etiqueta.nombre))
+        }
+    }
+
+    fun copiarGaleriaAAlmacenamientoInterno(context: Context, sourceUri: Uri) {
+        try {
+            val carpeta = File(context.filesDir, "fotos").apply { mkdirs() }
+            val archivo = File(carpeta, "instante_${System.currentTimeMillis()}.jpg")
+            context.contentResolver.openInputStream(sourceUri)?.use { input ->
+                FileOutputStream(archivo).use { output ->
+                    input.copyTo(output)
+                }
+            }
+            if (archivo.exists() && archivo.length() > 0) {
+                actualizarFotoUri(archivo.absolutePath, true)
+            } else {
+                viewModelScope.launch {
+                    _eventoUi.emit("Error al copiar la imagen de la galería")
+                }
+            }
+        } catch (_: Exception) {
+            viewModelScope.launch {
+                _eventoUi.emit("Error al copiar la imagen de la galería")
+            }
+        }
     }
 
     fun guardarInstante(context: Context, onGuardadoExitoso: () -> Unit) {
@@ -107,10 +178,12 @@ class NuevoInstanteViewModel(
 
         viewModelScope.launch {
             try {
+                val fotoNormalizada = normalizarYGuardarFoto(context, fotoUri)
+
                 val citaEntity = if (cita.isNotBlank()) {
                     CitaEntity(
                         texto = cita.trim(),
-                        autor = "Desconocido",
+                        autor = autorCita.trim(),
                         obra = null,
                         esFavorita = false
                     )
@@ -126,7 +199,7 @@ class NuevoInstanteViewModel(
                     id = instanteIdParaEditar ?: 0L,
                     titulo = titulo.trim(),
                     reflexion = reflexion.trim(),
-                    fotoUri = fotoUri,
+                    fotoUri = fotoNormalizada,
                     lugar = lugar.ifBlank { "Lugar desconocido" },
                     latitud = instanteOriginal?.latitud,
                     longitud = instanteOriginal?.longitud,
@@ -148,6 +221,8 @@ class NuevoInstanteViewModel(
                     repository.insertarInstanteCompleto(instante, seleccionadas, citaEntity)
                     _eventoUi.emit(context.getString(R.string.instante_guardado_exito))
                 }
+                esFotoTemporal = false
+                limpiar()
                 onGuardadoExitoso()
             } catch (e: Exception) {
                 _eventoUi.emit("Error al guardar: ${e.localizedMessage}")
@@ -155,20 +230,24 @@ class NuevoInstanteViewModel(
         }
     }
 
-    fun copiarUriAAlmacenamientoInterno(context: Context, sourceUri: Uri): String {
+    private fun normalizarYGuardarFoto(context: Context, sourceUriStr: String): String {
         try {
-            val inputStream = context.contentResolver.openInputStream(sourceUri) ?: return ""
-            val fileName = "instante_${System.currentTimeMillis()}.jpg"
-            val file = File(context.filesDir, fileName)
-            val outputStream = FileOutputStream(file)
-            inputStream.use { input ->
-                outputStream.use { output ->
-                    input.copyTo(output)
+            val fotosDir = File(context.filesDir, "fotos")
+            if (!fotosDir.exists()) fotosDir.mkdirs()
+
+            val sourceFile = File(if (sourceUriStr.startsWith("file://")) Uri.parse(sourceUriStr).path ?: sourceUriStr else sourceUriStr)
+            if (sourceFile.exists()) {
+                if (sourceFile.parentFile?.absolutePath == fotosDir.absolutePath) {
+                    return sourceFile.absolutePath
+                } else {
+                    val destFile = File(fotosDir, "instante_${System.currentTimeMillis()}.jpg")
+                    sourceFile.copyTo(destFile, overwrite = true)
+                    return destFile.absolutePath
                 }
             }
-            return Uri.fromFile(file).toString()
+            return sourceUriStr
         } catch (_: Exception) {
-            return sourceUri.toString()
+            return sourceUriStr
         }
     }
 

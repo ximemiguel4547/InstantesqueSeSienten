@@ -134,6 +134,10 @@ class InstantesRepositoryImpl(
         etiquetaDao.insertarEtiqueta(EtiquetaEntity(nombre = nombre.trim()))
     }
 
+    override suspend fun actualizarEtiqueta(etiqueta: EtiquetaEntity) = withContext(Dispatchers.IO) {
+        etiquetaDao.actualizarEtiqueta(etiqueta)
+    }
+
     override suspend fun eliminarEtiqueta(etiqueta: EtiquetaEntity) = withContext(Dispatchers.IO) {
         etiquetaDao.eliminarEtiqueta(etiqueta)
     }

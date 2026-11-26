@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import com.instantes.app.data.entity.EtiquetaEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -15,6 +16,9 @@ interface EtiquetaDao {
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun insertarEtiquetas(etiquetas: List<EtiquetaEntity>)
+
+    @Update
+    fun actualizarEtiqueta(etiqueta: EtiquetaEntity)
 
     @Delete
     fun eliminarEtiqueta(etiqueta: EtiquetaEntity)
