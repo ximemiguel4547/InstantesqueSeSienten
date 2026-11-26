@@ -33,7 +33,16 @@ class InicioViewModel(private val repository: InstantesRepository) : ViewModel()
     private val _busquedaFlow = MutableStateFlow("")
     private val _filtroFlow = MutableStateFlow<FiltroInicio>(FiltroInicio.Todos)
 
+    private val _eventoUi = MutableSharedFlow<String>()
+    val eventoUi: SharedFlow<String> = _eventoUi.asSharedFlow()
+
     val todasLasEtiquetas: StateFlow<List<Etiqueta>> = repository.todasLasEtiquetas.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    val todosLosInstantes: StateFlow<List<Instante>> = repository.todosLosInstantes.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
@@ -72,21 +81,72 @@ class InicioViewModel(private val repository: InstantesRepository) : ViewModel()
         _filtroFlow.value = nuevoFiltro
     }
 
+    fun actualizarEtiqueta(id: Long, nuevoNombre: String) {
+        viewModelScope.launch {
+            val trimmed = nuevoNombre.trim()
+            if (trimmed.isBlank()) {
+                _eventoUi.emit("Escribe un nombre para la etiqueta")
+                return@launch
+            }
+            val existe = todasLasEtiquetas.value.any { it.id != id && it.nombre.equals(trimmed, ignoreCase = true) }
+            if (existe) {
+                _eventoUi.emit("Ya existe una etiqueta con ese nombre")
+                return@launch
+            }
+            try {
+                val etAntigua = todasLasEtiquetas.value.find { it.id == id }
+                repository.actualizarEtiqueta(EtiquetaEntity(id = id, nombre = trimmed))
+                val filtro = filtroActual
+                if (filtro is FiltroInicio.Etiqueta && etAntigua != null && filtro.nombre.equals(etAntigua.nombre, ignoreCase = true)) {
+                    actualizarFiltro(FiltroInicio.Todos)
+                }
+            } catch (_: Exception) {
+                _eventoUi.emit("Ya existe una etiqueta con ese nombre")
+            }
+        }
+    }
+
+    fun eliminarEtiqueta(etiqueta: Etiqueta) {
+        viewModelScope.launch {
+            try {
+                repository.eliminarEtiqueta(EtiquetaEntity(id = etiqueta.id, nombre = etiqueta.nombre))
+                val filtro = filtroActual
+                if (filtro is FiltroInicio.Etiqueta && filtro.nombre.equals(etiqueta.nombre, ignoreCase = true)) {
+                    actualizarFiltro(FiltroInicio.Todos)
+                }
+            } catch (_: Exception) {
+                _eventoUi.emit("Error al eliminar la etiqueta")
+            }
+        }
+    }
+
     fun alternarFavorito(instanteId: Long, esFavoritoActual: Boolean) {
         viewModelScope.launch {
-            repository.actualizarFavorito(instanteId, !esFavoritoActual)
+            try {
+                repository.actualizarFavorito(instanteId, !esFavoritoActual)
+            } catch (_: Exception) {
+                _eventoUi.emit("Error al actualizar favorito")
+            }
         }
     }
 
     fun archivarInstante(instanteId: Long, archivadoActual: Boolean) {
         viewModelScope.launch {
-            repository.actualizarArchivado(instanteId, !archivadoActual)
+            try {
+                repository.actualizarArchivado(instanteId, !archivadoActual)
+            } catch (_: Exception) {
+                _eventoUi.emit("Error al actualizar archivo")
+            }
         }
     }
 
     fun eliminarInstante(instanteId: Long, fotoUri: String) {
         viewModelScope.launch {
-            repository.eliminarInstante(instanteId, fotoUri)
+            try {
+                repository.eliminarInstante(instanteId, fotoUri)
+            } catch (_: Exception) {
+                _eventoUi.emit("Error al eliminar el instante")
+            }
         }
     }
 

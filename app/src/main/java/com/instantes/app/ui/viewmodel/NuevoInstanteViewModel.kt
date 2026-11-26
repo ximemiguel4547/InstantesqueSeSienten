@@ -142,6 +142,7 @@ class NuevoInstanteViewModel(
     fun eliminarEtiqueta(etiqueta: Etiqueta) {
         viewModelScope.launch {
             repository.eliminarEtiqueta(EtiquetaEntity(id = etiqueta.id, nombre = etiqueta.nombre))
+            seleccionadas.remove(etiqueta.id)
         }
     }
 

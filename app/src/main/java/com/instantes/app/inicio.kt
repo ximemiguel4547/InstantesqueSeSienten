@@ -1,7 +1,9 @@
 package com.instantes.app
 
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -25,11 +27,12 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
 import com.instantes.app.ui.viewmodel.FiltroInicio
 import com.instantes.app.ui.viewmodel.InicioViewModel
+import kotlinx.coroutines.flow.collectLatest
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun Inicio(
     onNuevoClick: () -> Unit = {},
@@ -55,10 +58,20 @@ fun Inicio(
             }
         }
 
+        val snackbarHostState = remember { SnackbarHostState() }
+
+        LaunchedEffect(Unit) {
+            viewModel.eventoUi.collectLatest { mensaje ->
+                snackbarHostState.showSnackbar(mensaje)
+            }
+        }
+
         val instantes by viewModel.instantes.collectAsState()
+        val todosLosInstantes by viewModel.todosLosInstantes.collectAsState()
         val etiquetas by viewModel.todasLasEtiquetas.collectAsState()
 
         Scaffold(
+            snackbarHost = { SnackbarHost(snackbarHostState) },
             topBar = {
                 CenterAlignedTopAppBar(
                     title = { Text(stringResource(R.string.inicio_titulo)) }
@@ -146,11 +159,104 @@ fun Inicio(
                         }
                         listItemsIndexed(etiquetas) { _, etiqueta ->
                             val esSeleccionado = (viewModel.filtroActual as? FiltroInicio.Etiqueta)?.nombre.equals(etiqueta.nombre, ignoreCase = true)
+                            var mostrarOpciones by rememberSaveable(etiqueta.id) { mutableStateOf(false) }
+                            var mostrarEditar by rememberSaveable(etiqueta.id) { mutableStateOf(false) }
+                            var nombreEditado by rememberSaveable(etiqueta.id) { mutableStateOf(etiqueta.nombre) }
+                            var mostrarEliminar by rememberSaveable(etiqueta.id) { mutableStateOf(false) }
+
                             FilterChip(
                                 selected = esSeleccionado,
                                 onClick = { viewModel.actualizarFiltro(FiltroInicio.Etiqueta(etiqueta.nombre)) },
-                                label = { Text(etiqueta.nombre) }
+                                label = { Text(etiqueta.nombre) },
+                                modifier = Modifier.combinedClickable(
+                                    onClick = { viewModel.actualizarFiltro(FiltroInicio.Etiqueta(etiqueta.nombre)) },
+                                    onLongClick = { mostrarOpciones = true }
+                                )
                             )
+
+                            if (mostrarOpciones) {
+                                AlertDialog(
+                                    onDismissRequest = { mostrarOpciones = false },
+                                    title = { Text("Gestionar etiqueta") },
+                                    text = { Text("¿Qué deseas hacer con la etiqueta \"${etiqueta.nombre}\"?") },
+                                    confirmButton = {
+                                        Button(
+                                            onClick = {
+                                                mostrarOpciones = false
+                                                nombreEditado = etiqueta.nombre
+                                                mostrarEditar = true
+                                            }
+                                        ) {
+                                            Text("Editar")
+                                        }
+                                    },
+                                    dismissButton = {
+                                        TextButton(
+                                            onClick = {
+                                                mostrarOpciones = false
+                                                mostrarEliminar = true
+                                            }
+                                        ) {
+                                            Text("Eliminar", color = MaterialTheme.colorScheme.error)
+                                        }
+                                    }
+                                )
+                            }
+
+                            if (mostrarEditar) {
+                                AlertDialog(
+                                    onDismissRequest = { mostrarEditar = false },
+                                    title = { Text("Editar Etiqueta") },
+                                    text = {
+                                        OutlinedTextField(
+                                            value = nombreEditado,
+                                            onValueChange = { nombreEditado = it },
+                                            label = { Text("Nombre de la etiqueta") },
+                                            singleLine = true,
+                                            modifier = Modifier.fillMaxWidth()
+                                        )
+                                    },
+                                    confirmButton = {
+                                        Button(
+                                            onClick = {
+                                                viewModel.actualizarEtiqueta(etiqueta.id, nombreEditado)
+                                                mostrarEditar = false
+                                            }
+                                        ) {
+                                            Text("Guardar")
+                                        }
+                                    },
+                                    dismissButton = {
+                                        TextButton(onClick = { mostrarEditar = false }) {
+                                            Text("Cancelar")
+                                        }
+                                    }
+                                )
+                            }
+
+                            if (mostrarEliminar) {
+                                AlertDialog(
+                                    onDismissRequest = { mostrarEliminar = false },
+                                    title = { Text("Eliminar Etiqueta") },
+                                    text = { Text("¿Eliminar la etiqueta '${etiqueta.nombre}'? Se quitará de los instantes que la usan, pero los instantes no se borran.") },
+                                    confirmButton = {
+                                        Button(
+                                            onClick = {
+                                                viewModel.eliminarEtiqueta(etiqueta)
+                                                mostrarEliminar = false
+                                            },
+                                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                                        ) {
+                                            Text("Eliminar")
+                                        }
+                                    },
+                                    dismissButton = {
+                                        TextButton(onClick = { mostrarEliminar = false }) {
+                                            Text("Cancelar")
+                                        }
+                                    }
+                                )
+                            }
                         }
                         item {
                             FilterChip(
@@ -164,6 +270,15 @@ fun Inicio(
 
                 if (instantes.isEmpty()) {
                     item(span = { GridItemSpan(maxLineSpan) }) {
+                        val mensajeVacio = when {
+                            viewModel.busqueda.isNotBlank() -> "No se encontraron instantes con esa búsqueda"
+                            viewModel.filtroActual is FiltroInicio.Favoritos -> "Aún no tienes favoritos"
+                            viewModel.filtroActual is FiltroInicio.Archivados -> "No hay instantes archivados"
+                            viewModel.filtroActual is FiltroInicio.Etiqueta -> "No se encontraron instantes con esa etiqueta"
+                            todosLosInstantes.isEmpty() -> "Agrega esos momentos que te hicieron sentir"
+                            else -> "No se encontraron instantes"
+                        }
+
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -179,7 +294,7 @@ fun Inicio(
                                 )
                                 Spacer(modifier = Modifier.height(16.dp))
                                 Text(
-                                    text = "Agrega esos momentos que te hicieron sentir",
+                                    text = mensajeVacio,
                                     style = MaterialTheme.typography.bodyLarge,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     textAlign = TextAlign.Center
