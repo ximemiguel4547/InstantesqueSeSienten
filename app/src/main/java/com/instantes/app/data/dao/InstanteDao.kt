@@ -36,6 +36,21 @@ interface InstanteDao {
     @Query("UPDATE instantes SET archivado = :archivado WHERE id = :id")
     fun actualizarArchivado(id: Long, archivado: Boolean)
 
+    @Query("SELECT COUNT(*) FROM instantes")
+    fun contarInstantes(): Flow<Int>
+
+    @Query("SELECT COUNT(*) FROM instantes WHERE esFavorito = 1")
+    fun contarFavoritos(): Flow<Int>
+
+    @Query("""
+        SELECT etiquetas.nombre FROM etiquetas 
+        INNER JOIN instante_etiqueta ON etiquetas.id = instante_etiqueta.etiquetaId 
+        GROUP BY etiquetas.id 
+        ORDER BY COUNT(instante_etiqueta.instanteId) DESC 
+        LIMIT 1
+    """)
+    fun obtenerEtiquetaMasUsada(): Flow<String?>
+
     @Transaction
     @Query("SELECT * FROM instantes WHERE id = :id")
     fun obtenerInstanteCompletoPorId(id: Long): InstanteCompleto?

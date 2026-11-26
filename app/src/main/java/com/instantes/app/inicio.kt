@@ -36,7 +36,8 @@ fun Inicio(
     onEditarClick: (Long) -> Unit = {},
     onItemClick: (Long) -> Unit = {},
     onCitasClick: () -> Unit = {},
-    onFavoritosClick: () -> Unit = {}
+    onFavoritosClick: () -> Unit = {},
+    onPerfilClick: () -> Unit = {}
 ) {
     SinTecladoCompleto {
         val context = LocalContext.current
@@ -97,7 +98,7 @@ fun Inicio(
                     )
                     NavigationBarItem(
                         selected = false,
-                        onClick = {},
+                        onClick = onPerfilClick,
                         icon = { Icon(Icons.Default.Person, contentDescription = null) },
                         label = { Text(stringResource(R.string.nav_perfil)) }
                     )

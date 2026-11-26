@@ -23,6 +23,9 @@ interface CitaDao {
     @Query("UPDATE citas SET esFavorita = :esFavorita WHERE id = :id")
     fun actualizarFavoritoCita(id: Long, esFavorita: Boolean)
 
+    @Query("SELECT COUNT(*) FROM citas")
+    fun contarCitas(): Flow<Int>
+
     @Query("SELECT * FROM citas ORDER BY id DESC")
     fun obtenerTodasCitas(): Flow<List<CitaEntity>>
 

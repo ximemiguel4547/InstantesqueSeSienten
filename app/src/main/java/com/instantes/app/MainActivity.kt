@@ -13,6 +13,7 @@ import com.instantes.app.data.local.PreferencesManager
 import com.instantes.app.ui.screen.CitasScreen
 import com.instantes.app.ui.screen.DetalleInstanteScreen
 import com.instantes.app.ui.screen.FavoritosScreen
+import com.instantes.app.ui.screen.PerfilScreen
 import com.instantes.app.ui.theme.AppInstantesqueSeSientenTheme
 import com.instantes.app.ui.theme.Bienvenida
 import kotlinx.coroutines.flow.first
@@ -55,7 +56,8 @@ class MainActivity : ComponentActivity() {
                             onEditarClick = { id -> navController.navigate("nuevo?id=$id") },
                             onItemClick = { id -> navController.navigate("detalle/$id") },
                             onCitasClick = { navController.navigate("citas") },
-                            onFavoritosClick = { navController.navigate("favoritos") }
+                            onFavoritosClick = { navController.navigate("favoritos") },
+                            onPerfilClick = { navController.navigate("perfil") }
                         )
                     }
                     composable("favoritos") {
@@ -67,8 +69,21 @@ class MainActivity : ComponentActivity() {
                                 }
                             },
                             onCitasClick = { navController.navigate("citas") },
+                            onPerfilClick = { navController.navigate("perfil") },
                             onEditarClick = { id -> navController.navigate("nuevo?id=$id") },
                             onItemClick = { id -> navController.navigate("detalle/$id") }
+                        )
+                    }
+                    composable("perfil") {
+                        PerfilScreen(
+                            onVolver = { navController.popBackStack() },
+                            onInicioClick = {
+                                navController.navigate("inicio") {
+                                    popUpTo("inicio") { inclusive = true }
+                                }
+                            },
+                            onFavoritosClick = { navController.navigate("favoritos") },
+                            onCitasClick = { navController.navigate("citas") }
                         )
                     }
                     composable(
@@ -104,7 +119,8 @@ class MainActivity : ComponentActivity() {
                                     popUpTo("inicio") { inclusive = true }
                                 }
                             },
-                            onFavoritosClick = { navController.navigate("favoritos") }
+                            onFavoritosClick = { navController.navigate("favoritos") },
+                            onPerfilClick = { navController.navigate("perfil") }
                         )
                     }
                 }

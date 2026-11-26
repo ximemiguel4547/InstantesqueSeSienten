@@ -120,6 +120,7 @@ fun CitasScreen(
     onVolver: () -> Unit = {},
     onInicioClick: () -> Unit = {},
     onFavoritosClick: () -> Unit = {},
+    onPerfilClick: () -> Unit = {},
     viewModel: CitasViewModel = rememberCitasViewModel()
 ) {
     SinTecladoCompleto {
@@ -190,7 +191,7 @@ fun CitasScreen(
                     )
                     NavigationBarItem(
                         selected = false,
-                        onClick = {},
+                        onClick = onPerfilClick,
                         icon = { Icon(Icons.Default.Person, contentDescription = null) },
                         label = { Text(stringResource(R.string.nav_perfil)) }
                     )

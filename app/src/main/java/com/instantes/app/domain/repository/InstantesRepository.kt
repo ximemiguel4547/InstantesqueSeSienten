@@ -13,6 +13,10 @@ interface InstantesRepository {
     val instantesArchivados: Flow<List<Instante>>
     val todasLasEtiquetas: Flow<List<Etiqueta>>
     val todasLasCitas: Flow<List<Cita>>
+    val totalInstantes: Flow<Int>
+    val totalFavoritos: Flow<Int>
+    val totalCitas: Flow<Int>
+    val etiquetaMasUsada: Flow<String?>
 
     fun buscarInstantes(query: String): Flow<List<Instante>>
     fun obtenerInstantesPorEtiqueta(nombreEtiqueta: String): Flow<List<Instante>>

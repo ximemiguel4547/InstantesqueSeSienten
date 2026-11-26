@@ -37,6 +37,11 @@ class InstantesRepositoryImpl(
     override val todasLasCitas: Flow<List<Cita>> =
         citaDao.obtenerTodasCitas().map { lista -> lista.map { it.toDomain() } }
 
+    override val totalInstantes: Flow<Int> = instanteDao.contarInstantes()
+    override val totalFavoritos: Flow<Int> = instanteDao.contarFavoritos()
+    override val totalCitas: Flow<Int> = citaDao.contarCitas()
+    override val etiquetaMasUsada: Flow<String?> = instanteDao.obtenerEtiquetaMasUsada()
+
     override fun buscarInstantes(query: String): Flow<List<Instante>> {
         return if (query.isBlank()) {
             todosLosInstantes
