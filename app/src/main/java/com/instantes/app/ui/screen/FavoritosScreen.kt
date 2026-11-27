@@ -27,15 +27,13 @@ import com.instantes.app.FotoInstante
 import com.instantes.app.InstantesApplication
 import com.instantes.app.R
 import com.instantes.app.SinTecladoCompleto
+import com.instantes.app.aFechaLegible
 import com.instantes.app.domain.model.Instante
 import com.instantes.app.domain.repository.InstantesRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 class FavoritosViewModel(private val repository: InstantesRepository) : ViewModel() {
     val instantes: StateFlow<List<Instante>> = repository.obtenerFavoritos().stateIn(
@@ -155,8 +153,7 @@ fun FavoritosScreen(
                 ) {
                     items(instantes) { instante ->
                         val fechaStr = remember(instante.fechaHora) {
-                            val sdf = SimpleDateFormat("dd MMM", Locale.getDefault())
-                            sdf.format(Date(instante.fechaHora))
+                            instante.fechaHora.aFechaLegible()
                         }
                         val lugarYFecha = "$fechaStr · ${instante.lugar}"
 

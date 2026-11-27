@@ -26,6 +26,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -428,6 +429,26 @@ fun rememberCitasViewModel(): CitasViewModel {
             ViewModelProvider(activity, CitasViewModel.Factory(repo))[CitasViewModel::class.java]
         } else {
             CitasViewModel(repo)
+        }
+    }
+}
+
+@Preview
+@Composable
+fun TarjetaCitaPreview() {
+    MaterialTheme {
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+            ),
+            modifier = Modifier.fillMaxWidth().padding(16.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = "“La vida es el arte del encuentro.”",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            }
         }
     }
 }

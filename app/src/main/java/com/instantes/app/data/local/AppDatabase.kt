@@ -33,6 +33,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun citaDao(): CitaDao
 
     companion object {
+        //SGON
         @Volatile
         private var INSTANCE: AppDatabase? = null
 

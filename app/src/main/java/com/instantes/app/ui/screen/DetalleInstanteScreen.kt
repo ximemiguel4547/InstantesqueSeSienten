@@ -17,7 +17,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
@@ -25,12 +24,10 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.instantes.app.FotoInstante
 import com.instantes.app.InstantesApplication
+import com.instantes.app.aFechaLegible
 import com.instantes.app.domain.model.Instante
 import com.instantes.app.domain.repository.InstantesRepository
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 class DetalleViewModel(
     private val repository: InstantesRepository,
@@ -181,8 +178,7 @@ fun DetalleInstanteScreen(
                         style = MaterialTheme.typography.headlineMedium
                     )
                     val fechaStr = remember(instante.fechaHora) {
-                        val sdf = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault())
-                        sdf.format(Date(instante.fechaHora))
+                        instante.fechaHora.aFechaLegible()
                     }
                     Text(
                         text = "$fechaStr · ${instante.lugar}",

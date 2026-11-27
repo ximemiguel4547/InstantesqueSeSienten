@@ -78,12 +78,12 @@ fun PerfilScreen(
             snackbarHost = { SnackbarHost(snackbarHostState) },
             topBar = {
                 TopAppBar(
-                    title = { Text("Perfil") },
+                    title = { Text(stringResource(R.string.perfil_titulo)) },
                     navigationIcon = {
                         IconButton(onClick = onVolver) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Volver"
+                                contentDescription = stringResource(R.string.volver)
                             )
                         }
                     }
@@ -139,25 +139,26 @@ fun PerfilScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
-                            text = "Tu colección",
+                            text = stringResource(R.string.perfil_coleccion),
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.primary
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "Instantes guardados: $totalInstantes",
+                            text = stringResource(R.string.perfil_instantes_guardados, totalInstantes),
                             style = MaterialTheme.typography.bodyLarge
                         )
                         Text(
-                            text = "Favoritos: $totalFavoritos",
+                            text = stringResource(R.string.perfil_favoritos_count, totalFavoritos),
                             style = MaterialTheme.typography.bodyLarge
                         )
                         Text(
-                            text = "Citas: $totalCitas",
+                            text = stringResource(R.string.perfil_citas_count, totalCitas),
                             style = MaterialTheme.typography.bodyLarge
                         )
+                        val etiquetaStr: String = if (etiquetaMasUsada.isNullOrBlank()) "—" else etiquetaMasUsada!!
                         Text(
-                            text = "Etiqueta más usada: ${if (etiquetaMasUsada.isNullOrBlank()) "—" else etiquetaMasUsada}",
+                            text = stringResource(R.string.perfil_etiqueta_mas_usada, etiquetaStr),
                             style = MaterialTheme.typography.bodyLarge
                         )
                     }
@@ -176,7 +177,7 @@ fun PerfilScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
-                            text = "Mis etiquetas",
+                            text = stringResource(R.string.perfil_mis_etiquetas),
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -184,7 +185,7 @@ fun PerfilScreen(
 
                         if (etiquetas.isEmpty()) {
                             Text(
-                                text = "No hay etiquetas creadas",
+                                text = stringResource(R.string.perfil_sin_etiquetas),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -252,7 +253,7 @@ fun PerfilScreen(
                                     }
                                 }
                             ) {
-                                Text("+ Agregar etiqueta")
+                                Text(stringResource(R.string.perfil_agregar_etiqueta))
                             }
                             Text(
                                 text = "${etiquetas.size} de 10",
@@ -276,13 +277,13 @@ fun PerfilScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
-                            text = "Aviso de privacidad",
+                            text = stringResource(R.string.perfil_aviso_privacidad),
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.primary
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "Tus instantes, fotos y citas se guardan únicamente en este dispositivo. La aplicación no envía información a ningún servidor ni necesita conexión a internet.",
+                            text = stringResource(R.string.perfil_texto_privacidad),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -302,17 +303,17 @@ fun PerfilScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
-                            text = "Acerca de",
+                            text = stringResource(R.string.perfil_acerca_de),
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.primary
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "Aplicación: $appName",
+                            text = stringResource(R.string.perfil_aplicacion, appName),
                             style = MaterialTheme.typography.bodyLarge
                         )
                         Text(
-                            text = "Versión: $versionNombre",
+                            text = stringResource(R.string.perfil_version, versionNombre),
                             style = MaterialTheme.typography.bodyLarge
                         )
                     }
@@ -323,12 +324,12 @@ fun PerfilScreen(
         if (mostrarDialogoAgregar) {
             AlertDialog(
                 onDismissRequest = { mostrarDialogoAgregar = false },
-                title = { Text("Nueva Etiqueta") },
+                title = { Text(stringResource(R.string.perfil_nueva_etiqueta)) },
                 text = {
                     OutlinedTextField(
                         value = nuevoNombreEtiqueta,
                         onValueChange = { nuevoNombreEtiqueta = it },
-                        label = { Text("Nombre de la etiqueta") },
+                        label = { Text(stringResource(R.string.perfil_nombre_etiqueta)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -341,12 +342,12 @@ fun PerfilScreen(
                             mostrarDialogoAgregar = false
                         }
                     ) {
-                        Text("Agregar")
+                        Text(stringResource(R.string.perfil_agregar))
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { mostrarDialogoAgregar = false }) {
-                        Text("Cancelar")
+                        Text(stringResource(R.string.perfil_cancelar))
                     }
                 }
             )
@@ -355,12 +356,12 @@ fun PerfilScreen(
         if (mostrarDialogoEditar && etiquetaParaEditar != null) {
             AlertDialog(
                 onDismissRequest = { mostrarDialogoEditar = false },
-                title = { Text("Editar Etiqueta") },
+                title = { Text(stringResource(R.string.perfil_editar_etiqueta)) },
                 text = {
                     OutlinedTextField(
                         value = nombreEditado,
                         onValueChange = { nombreEditado = it },
-                        label = { Text("Nombre de la etiqueta") },
+                        label = { Text(stringResource(R.string.perfil_nombre_etiqueta)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -375,12 +376,12 @@ fun PerfilScreen(
                             mostrarDialogoEditar = false
                         }
                     ) {
-                        Text("Guardar")
+                        Text(stringResource(R.string.perfil_guardar))
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { mostrarDialogoEditar = false }) {
-                        Text("Cancelar")
+                        Text(stringResource(R.string.perfil_cancelar))
                     }
                 }
             )
@@ -389,7 +390,7 @@ fun PerfilScreen(
         if (mostrarDialogoEliminar && etiquetaParaEliminar != null) {
             AlertDialog(
                 onDismissRequest = { mostrarDialogoEliminar = false },
-                title = { Text("Eliminar Etiqueta") },
+                title = { Text(stringResource(R.string.perfil_eliminar_etiqueta)) },
                 text = { Text("¿Eliminar la etiqueta '${etiquetaParaEliminar?.nombre}'? Se quitará de los instantes que la usan, pero los instantes no se borran.") },
                 confirmButton = {
                     Button(
@@ -402,12 +403,12 @@ fun PerfilScreen(
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                     ) {
-                        Text("Eliminar")
+                        Text(stringResource(R.string.perfil_eliminar))
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { mostrarDialogoEliminar = false }) {
-                        Text("Cancelar")
+                        Text(stringResource(R.string.perfil_cancelar))
                     }
                 }
             )

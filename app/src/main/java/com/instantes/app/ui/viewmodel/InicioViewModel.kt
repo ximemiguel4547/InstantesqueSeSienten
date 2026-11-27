@@ -20,7 +20,7 @@ sealed interface FiltroInicio {
     object Archivados : FiltroInicio
     data class Etiqueta(val nombre: String) : FiltroInicio
 }
-
+    //U
 @OptIn(ExperimentalCoroutinesApi::class)
 class InicioViewModel(private val repository: InstantesRepository) : ViewModel() {
 

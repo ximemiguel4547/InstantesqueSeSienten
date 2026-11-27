@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.tooling.preview.Preview
 import coil.compose.AsyncImage
 import java.io.File
 
@@ -46,5 +47,13 @@ fun FotoInstante(fotoUri: String, modifier: Modifier = Modifier) {
                 tint = MaterialTheme.colorScheme.onPrimaryContainer
             )
         }
+    }
+}
+
+@Preview
+@Composable
+fun FotoInstantePreview() {
+    MaterialTheme {
+        FotoInstante(fotoUri = "")
     }
 }

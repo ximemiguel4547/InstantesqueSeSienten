@@ -43,4 +43,27 @@
     <string name="no_hay_instantes">No hay instantes guardados todavía</string>
     <string name="error_foto_titulo_obligatorios">La foto y el título son obligatorios</string>
     <string name="instante_guardado_exito">Instante guardado con éxito</string>
+
+    <string name="perfil_titulo">Perfil</string>
+    <string name="perfil_coleccion">Tu colección</string>
+    <string name="perfil_instantes_guardados">Instantes guardados: %d</string>
+    <string name="perfil_favoritos_count">Favoritos: %d</string>
+    <string name="perfil_citas_count">Citas: %d</string>
+    <string name="perfil_etiqueta_mas_usada">Etiqueta más usada: %s</string>
+    <string name="perfil_mis_etiquetas">Mis etiquetas</string>
+    <string name="perfil_sin_etiquetas">No hay etiquetas creadas</string>
+    <string name="perfil_agregar_etiqueta">+ Agregar etiqueta</string>
+    <string name="perfil_aviso_privacidad">Aviso de privacidad</string>
+    <string name="perfil_texto_privacidad">Tus instantes, fotos y citas se guardan únicamente en este dispositivo. La aplicación no envía información a ningún servidor ni necesita conexión a internet.</string>
+    <string name="perfil_acerca_de">Acerca de</string>
+    <string name="perfil_aplicacion">Aplicación: %s</string>
+    <string name="perfil_version">Versión: %s</string>
+    <string name="perfil_nueva_etiqueta">Nueva Etiqueta</string>
+    <string name="perfil_nombre_etiqueta">Nombre de la etiqueta</string>
+    <string name="perfil_agregar">Agregar</string>
+    <string name="perfil_cancelar">Cancelar</string>
+    <string name="perfil_editar_etiqueta">Editar Etiqueta</string>
+    <string name="perfil_guardar">Guardar</string>
+    <string name="perfil_eliminar_etiqueta">Eliminar Etiqueta</string>
+    <string name="perfil_eliminar">Eliminar</string>
 </resources>

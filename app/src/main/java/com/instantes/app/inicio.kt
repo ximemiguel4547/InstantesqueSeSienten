@@ -23,14 +23,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
 import com.instantes.app.ui.viewmodel.FiltroInicio
 import com.instantes.app.ui.viewmodel.InicioViewModel
 import kotlinx.coroutines.flow.collectLatest
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -305,8 +303,7 @@ fun Inicio(
                 } else {
                     items(instantes) { instante ->
                         val fechaStr = remember(instante.fechaHora) {
-                            val sdf = SimpleDateFormat("dd MMM", Locale.getDefault())
-                            sdf.format(Date(instante.fechaHora))
+                            instante.fechaHora.aFechaLegible()
                         }
                         val lugarYFecha = "$fechaStr · ${instante.lugar}"
 
@@ -456,6 +453,35 @@ fun Inicio(
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Preview
+@Composable
+fun EstadoVacioPreview() {
+    MaterialTheme {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(32.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(
+                    imageVector = Icons.Default.FavoriteBorder,
+                    contentDescription = null,
+                    modifier = Modifier.size(64.dp),
+                    tint = MaterialTheme.colorScheme.outline
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "Agrega esos momentos que te hicieron sentir",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
             }
         }
     }
