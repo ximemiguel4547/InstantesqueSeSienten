@@ -331,6 +331,7 @@ fun Inicio(
                                                 .fillMaxSize()
                                                 .background(MaterialTheme.colorScheme.primaryContainer),
                                             contentAlignment = Alignment.Center
+
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Default.FavoriteBorder,
